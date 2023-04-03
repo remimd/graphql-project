@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id        Int             @id @default(autoincrement())
+  lastName  String          @map("last_name")
+  firstName String          @map("first_name")
+  email     String?         @unique
+  groups    GroupStudents[]
+  gardes    StudentGrades[]
+
+  @@map("student")
+}
+
+model Instructor {
+  id          Int             @id @default(autoincrement())
+  lastName    String          @map("last_name")
+  firstName   String          @map("first_name")
+  email       String?         @unique
+  classes     Class[]
+  gradesGiven StudentGrades[]
+
+  @@map("instructor")
+}
+
+model Course {
+  id     Int     @id @default(autoincrement())
+  name   String
+  groups Group[]
+
+  @@map("course")
+}
+
+model Group {
+  id        Int             @id @default(autoincrement())
+  name      String
+  startYear Int             @map("start_year")
+  endYear   Int             @map("end_year")
+  courseId  Int             @map("course_id")
+  course    Course          @relation(references: [id], fields: [courseId])
+  students  GroupStudents[]
+  classes   Class[]
+
+  @@unique([name, startYear, endYear, courseId])
+  @@map("group")
+}
+
+model GroupStudents {
+  groupId   Int     @map("group_id")
+  group     Group   @relation(references: [id], fields: [groupId])
+  studentId Int     @map("student_id")
+  student   Student @relation(references: [id], fields: [studentId])
+
+  @@id([groupId, studentId])
+  @@map("group_students")
+}
+
+model Subject {
+  id      Int     @id @default(autoincrement())
+  label   String
+  classes Class[]
+  grades  Grade[]
+
+  @@map("subject")
+}
+
+model Room {
+  id      Int     @id @default(autoincrement())
+  number  Int     @unique
+  classes Class[]
+
+  @@map("room")
+}
+
+model Class {
+  id           Int        @id @default(autoincrement())
+  start        DateTime
+  end          DateTime
+  groupId      Int        @map("group_id")
+  group        Group      @relation(references: [id], fields: [groupId])
+  subjectId    Int        @map("subject_id")
+  subject      Subject    @relation(references: [id], fields: [subjectId])
+  roomId       Int        @map("room_id")
+  room         Room       @relation(references: [id], fields: [roomId])
+  instructorId Int        @map("instructor_id")
+  instructor   Instructor @relation(references: [id], fields: [instructorId])
+
+  @@unique([start, end, roomId])
+  @@map("class")
+}
+
+model Grade {
+  id        Int             @id @default(autoincrement())
+  label     String
+  maximum   Int
+  subjectId Int             @map("subject_id")
+  subject   Subject         @relation(references: [id], fields: [subjectId])
+  students  StudentGrades[]
+
+  @@map("grade")
+}
+
+model StudentGrades {
+  value        Int
+  studentId    Int        @map("student_id")
+  student      Student    @relation(references: [id], fields: [studentId])
+  gradeId      Int        @map("grade_id")
+  grade        Grade      @relation(references: [id], fields: [gradeId])
+  instructorId Int        @map("instructor_id")
+  evaluateBy   Instructor @relation(references: [id], fields: [instructorId])
+
+  @@id([studentId, gradeId])
+  @@map("student_grades")
+}
