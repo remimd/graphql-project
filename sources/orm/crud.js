@@ -1,34 +1,49 @@
 const { client } = require("./client")
 
-function createFactory(table) {
+function _generateInclude(relations) {
+  const include = {}
+
+  for (const relation of relations) {
+    include[relation] = true
+  }
+
+  return include
+}
+
+function createFactory(table, relations) {
   return async ({ data }) => {
-    return client[table].create({ data })
+    const include = _generateInclude(relations)
+    return await client[table].create({ data, include })
   }
 }
 
-function getByIDFactory(table) {
+function getByIDFactory(table, relations) {
   return async ({ id }) => {
+    const include = _generateInclude(relations)
+
     try {
-      return await client[table].findUnique({ where: { id } })
+      return await client[table].findUnique({ where: { id }, include })
     } catch (exc) {
       return null
     }
   }
 }
 
-function getAllFactory(table) {
+function getAllFactory(table, relations) {
   return async () => {
-    return client[table].findMany()
+    const include = _generateInclude(relations)
+    return await client[table].findMany({ include })
   }
 }
 
-function editFactory(table) {
+function editFactory(table, relations) {
   return async ({ id, data }) => {
-    return client[table].update({ where: { id }, data })
+    const include = _generateInclude(relations)
+    return await client[table].update({ where: { id }, data, include })
   }
 }
 
-function deleteFactory(table) {
+function deleteFactory(table, ..._) {
   return async ({ id }) => {
     try {
       const object = await client[table].delete({ where: { id } })
@@ -62,7 +77,7 @@ const builder = {
   },
 }
 
-function crud(table, excludes = []) {
+function crud(table, relations = [], excludes = []) {
   const methods = {}
 
   for (const [key, value] of Object.entries(builder)) {
@@ -70,7 +85,7 @@ function crud(table, excludes = []) {
       continue
     }
 
-    methods[`${table}${value.name}`] = value.factory(table)
+    methods[`${table}${value.name}`] = value.factory(table, relations)
   }
 
   return methods

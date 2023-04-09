@@ -13,7 +13,7 @@ model Student {
   firstName String          @map("first_name")
   email     String?         @unique
   groups    GroupStudents[]
-  gardes    StudentGrades[]
+  grades    StudentGrades[]
 
   @@map("student")
 }
